@@ -25,10 +25,10 @@ def login(request):
         body = '{"username":' + str(username) + ',"password":' + str(password) + '}'
         hash = hmac.new(secret_channel.encode('utf-8'), body.encode('utf-8'), hashlib.md5).digest()
         signature = base64.b64encode(hash)
-        expected_header = 'Authorization: Bearer ' + str(signature)
+        expected_header = 'Authorization: X-Service-Signature ' + str(signature)
 
         if header == expected_header:
-            return JsonResponse({'status': 200, 'token': expected_header[22:]})
+            return JsonResponse({'status': 200, 'token': expected_header[35:]})
         else:
             return JsonResponse({'status': 201, 'message': 'Unauthorized'})
     return JsonResponse({'status': '500', 'message': 'Error'})
@@ -48,9 +48,11 @@ def register(request):
             models.User.objects.get(username=str(username))
         except models.User.DoesNotExist:
             models.User.objects.create(username=str(username), password=str(password), display_name=str(display_name),
-                                       secret_channel=str(secret_channel))
-            return JsonResponse({'status': 200, 'userId': models.User.objects.get(username=str(username)).id,
-                                 'displayName': str(display_name), 'secret': str(secret_channel)})
+                                       secret=str(secret_channel))
+
+            user_model = models.User.objects.get(username=str(username))
+            return JsonResponse({'status': 200, 'userId': user_model.id, 'displayName': str(display_name),
+                                 'secret': str(secret_channel)})
 
         return JsonResponse({'status': 500, 'message': 'User already exist'})
     return JsonResponse({'status': '500', 'message': 'Error'})
